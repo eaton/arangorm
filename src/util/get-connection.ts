@@ -22,7 +22,7 @@ const dbConnectionDefaults: DatabaseConnectionInfo = {
  * it is reused.
  * 
  * TODO: Maintain an map of connections rather than a single instance, always
- * start by connection to _system, and optionally create the new database if
+ * start by connecting to _system, and optionally create the new database if
  * it doesn't exist rather than erroring.
  */
 export const getConnection = (options: DatabaseConnectionInfo = {}) => {
