@@ -1,7 +1,8 @@
 import 'dotenv/config';
-import { Database } from "arangojs";
 import { Config } from 'arangojs/connection';
 import { merge } from 'ts-deepmerge';
+
+import { ArangORM } from "../db/orm.js";
 
 export interface DatabaseConnectionInfo extends Config {
   port?: number,
@@ -18,7 +19,7 @@ const dbConnectionDefaults: DatabaseConnectionInfo = {
 };
 
 /**
- * Returns an ArangoDB Database connection; if one has already been created,
+ * Returns a convenience-wrapped Database connection; if one has already been created,
  * it is reused.
  * 
  * TODO: Maintain an map of connections rather than a single instance, always
@@ -38,9 +39,9 @@ export const getConnection = (options: DatabaseConnectionInfo = {}) => {
       config.url = url.href;
     }
 
-    getConnection.connection = new Database(config);
+    getConnection.connection = new ArangORM(config);
   }
   return getConnection.connection;
 }
 
-getConnection.connection = undefined as undefined | Database;
+getConnection.connection = undefined as undefined | ArangORM;
