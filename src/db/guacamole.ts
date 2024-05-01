@@ -1,15 +1,12 @@
 import { Database } from "arangojs";
-
-export type Identifiable = ObjectWithId | ObjectWithKeyAndCollection;
-export type ObjectWithId = { _id: string };
-export type ObjectWithKeyAndCollection = { _key: string, _collection: string };
-
-export type Identifier = BareId | KeyAndCollection;
-export type BareId = string;
-export type KeyAndCollection = [_key: string, _collection: string];
-
+import { ObjectWithId, ObjectWithKey, DocumentSelector } from "arangojs/documents";
 
 export class Guacamole extends Database {
+
+  getId(input: DocumentSelector) {
+
+  };
+
   /**
    * Set a document's data, inserting or updating as necessary.
    */
@@ -47,7 +44,7 @@ export class Guacamole extends Database {
   /**
    * Delete the document with the given ID from ArangoDB.
    */
-  async delete(idOrKey: string, collection?: string): Promise<boolean> {
+  async delete(selector: DocumentSelector, collection?: string): Promise<boolean> {
     // This needs better logic; settle on "magic" key/id mapping or make it
     // explicit.
     const _id = [idOrKey, collection].filter(Boolean).join('/');
