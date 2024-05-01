@@ -1,12 +1,16 @@
 import 'dotenv/config';
+import { Database } from 'arangojs';
 import { Config } from 'arangojs/connection';
 import { merge } from 'ts-deepmerge';
 
-import { ArangORM } from "../db/orm.js";
+interface DatabaseConstructor<TDatabase extends Database = Database> {
+  new (config?: Config): TDatabase;
+}
 
-export interface DatabaseConnectionInfo extends Config {
+export interface DatabaseConnectionInfo<TDatabase extends Database = Database> extends Config {
   port?: number,
   create?: boolean,
+  ctor?: DatabaseConstructor<TDatabase>,
 }
 
 const dbConnectionDefaults: DatabaseConnectionInfo = {
@@ -39,9 +43,10 @@ export const getConnection = (options: DatabaseConnectionInfo = {}) => {
       config.url = url.href;
     }
 
-    getConnection.connection = new ArangORM(config);
+    const ctor = options.ctor ?? Database;
+    getConnection.connection = new ctor(config);
   }
   return getConnection.connection;
 }
 
-getConnection.connection = undefined as undefined | ArangORM;
+getConnection.connection = undefined as undefined | Database;

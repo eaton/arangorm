@@ -1,6 +1,15 @@
 import { Database } from "arangojs";
 
-export class ArangORM extends Database {
+export type Identifiable = ObjectWithId | ObjectWithKeyAndCollection;
+export type ObjectWithId = { _id: string };
+export type ObjectWithKeyAndCollection = { _key: string, _collection: string };
+
+export type Identifier = BareId | KeyAndCollection;
+export type BareId = string;
+export type KeyAndCollection = [_key: string, _collection: string];
+
+
+export class Guacamole extends Database {
   /**
    * Set a document's data, inserting or updating as necessary.
    */
