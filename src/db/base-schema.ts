@@ -3,7 +3,7 @@ import { z } from 'zod';
 const dbNamePattern = /[a-zA-Z0-9-_]{1,64}/;
 const collectionNamePattern = /[a-zA-Z0-9-_]{1,128}/
 const keyPattern = /[a-zA-Z0-9_@()+,=;$!'%*.-]{1,254}/;
-const idPattern = /[a-zA-Z0-9-_]{1,128}\[a-zA-Z0-9_@()+,=;$!'%*.-]{1,254}/;
+const idPattern = /[a-zA-Z0-9-_]{1,128}\/[a-zA-Z0-9_@()+,=;$!'%*.-]{1,254}/;
 
 // DB and collection names
 export const databaseName = z.string().regex(dbNamePattern, { message: 'Valid DB name characters: a-zA-Z0-9_-' });
@@ -13,25 +13,22 @@ export const collectionName = z.string().regex(collectionNamePattern, { message:
 export const documentKey = z.string().regex(keyPattern, { message: `Valid document key characters: a-zA-Z0-9_@()+,=;$!'%*.-`});
 export const documentId = z.string().regex(idPattern);
 
-export const DocumentSchema = z.object({
-  _id: documentId.optional(),
-  _key: documentKey.optional(),
-  _rev: z.string().optional()
-}).passthrough();
-
-export const EdgeSchema = DocumentSchema.extend({
-  _to: documentId,
-  _from: documentId,
-});
-
-export const CollectionSchema = z.object({
-  name: collectionName,
-  edge: z.boolean().optional().default(false),
-  schema: z.instanceof(z.ZodAny).optional(),
-});
-
-export const DbSchema = z.object({
-  name: collectionName,
-  collections: z.array(CollectionSchema).optional()
-});
-
+const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+type Literal = z.infer<typeof literalSchema>;
+type Json = Literal | { [key: string]: Json } | Json[];
+export const JsonAnySchema: z.ZodType<Json> = z.lazy(() =>
+  z.union([literalSchema, z.array(JsonAnySchema), z.record(JsonAnySchema)])
+);
+export const JsonObjectSchema = z.record(JsonAnySchema);
+export const ZDocumentSchema = JsonObjectSchema
+  .and(z.object({
+    _id: documentId,
+    _key: documentKey,
+    _rev: z.string(),
+  }));
+export const ZEdgeSchema = ZDocumentSchema
+  .and(z.object({
+    _from: documentId,
+    _to: documentId,
+  }));
+export const ZDocOrEdgeSchema = z.union([ZDocumentSchema, ZEdgeSchema]);
