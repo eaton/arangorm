@@ -1,9 +1,9 @@
-import { DocumentSelector, SaveableDocument } from "./meta-types.js";
+import { DocumentSelector, SaveableDocument } from "./identifiers.js";
 
 /**
  * Given an input string or object, return an object with an _id, _collection, and _key.
  */
-export function getMeta(input: SaveableDocument | DocumentSelector) {
+export function getIdentifiers(input: SaveableDocument | DocumentSelector) {
   let _key: string | undefined = undefined;
   let _collection: string | undefined = undefined;
   let _id: string | undefined = undefined;

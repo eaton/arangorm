@@ -1,21 +1,10 @@
 import { Database } from "arangojs";
-import { DocumentSelector, ObjectWithId, SaveableDocument} from "../util/meta-types.js";
-import { getMeta } from "../util/get-meta.js";
+import { DocumentSelector, ObjectWithId, SaveableDocument} from "./util/identifiers.js";
+import { getIdentifiers } from "./util/get-identifiers.js";
 import { Config } from "arangojs/connection";
 import { CollectionInsertOptions, CollectionReadOptions, CollectionRemoveOptions, CreateCollectionOptions, DocumentExistsOptions } from "arangojs/collection";
 import { merge } from "ts-deepmerge";
-import { StorageSystem } from "../storage-system.js";
-
-/**
- * Four types of collections Zarango provides helpers for.
- * 
- * document: Standard ArangoDB document collections.
- * edge: Standard ArangoDB edge collections
- * kvs: A key/value store that can be exposed using JS Map semantics.
- * dataset: A set of similarly-structured items meant to be manipulated as a set.
- *  Useful for csv/tsv imports, logs, etc.
- */
-export type ZarangoCollectionType = 'document' | 'edge' | 'kvs' | 'dataset';
+import { StorageSystem } from "./util/storage-system.js";
 
 export class Zarango extends Database implements StorageSystem {
   /**
@@ -27,7 +16,7 @@ export class Zarango extends Database implements StorageSystem {
    */
   static async getConnection(config?: Config) {
     const { databaseName, ...connection } = config ?? {};
-    if (databaseName) {
+    if (databaseName && databaseName !== '_system') {
       const db = new Database(connection);
       if (!(await db.listDatabases()).includes(databaseName)) {
         await db.createDatabase(databaseName);
@@ -42,52 +31,33 @@ export class Zarango extends Database implements StorageSystem {
   async save(item: SaveableDocument, options?: CollectionInsertOptions): Promise<ObjectWithId> {
     const defaults: CollectionInsertOptions = { overwriteMode: 'update' };
     const opt: CollectionInsertOptions = merge(defaults, options ?? {});
-    const sel = getMeta(item);
+    const sel = getIdentifiers(item);
     return this.collection(sel._collection).save({ ...item, ...sel }, opt)
   }
 
-  /**
-   * Set a document's data, inserting or updating as necessary.
-   */
   async saveAll(item: any, options: CollectionInsertOptions = {}) {
     const defaults: CollectionInsertOptions = { overwriteMode: 'update' };
     const opt: CollectionInsertOptions = merge(defaults, options);
-    const sel = getMeta(item);
+    const sel = getIdentifiers(item);
     return this.collection(sel._collection).save({ ...item, ...sel }, opt)
   }
   
-  /**
-   * A quick check to see if a given document exists.
-   */
-  async documentExists(input: DocumentSelector): Promise<boolean> {
-    const sel = getMeta(input);
+  async has(input: DocumentSelector): Promise<boolean> {
+    const sel = getIdentifiers(input);
     return this.collection(sel._collection).documentExists(sel._key);
   }
 
-  /**
-   * Get a single document.
-   */
-  async document(input: DocumentSelector, options: CollectionReadOptions = {}) {
-    const { _collection } = getMeta(input);
+  async fetch(input: DocumentSelector, options: CollectionReadOptions = {}) {
+    const { _collection } = getIdentifiers(input);
     return this.collection(_collection).document(input, options)
   }
   
-  /**
-   * Delete the document with the given ID from ArangoDB.
-   */
-  async remove(input: DocumentSelector, options: CollectionRemoveOptions = {}): Promise<boolean> {
-    const { _collection } = getMeta(input);
+  async delete(input: DocumentSelector, options: CollectionRemoveOptions = {}) {
+    const { _collection } = getIdentifiers(input);
     return this.collection(_collection).remove(input, options).then(() => true);
   }
 
-  /**
-   * Ensure a given collection exists; if it doesn't, create it.
-   *
-   * Returns a Promise that resolves to TRUE if the collection was created,
-   * FALSE if it already existed. If an error is encountered, the promisse
-   * is rejected.
-   */
-  async ensureCollection(name: string, options: CreateCollectionOptions & { type?: ZarangoCollectionType } = {} ): Promise<boolean> {
+  async ensureCollection(name: string, options: CreateCollectionOptions & { type?: string } = {} ) {
     const { type, ...opt } = options;
 
     return this.collection(name)
@@ -99,13 +69,7 @@ export class Zarango extends Database implements StorageSystem {
       });
   }
   
-  /**
-   * Blindly empties all the documents in a given collection.
-   *
-   * Returns a Promise that resolves to the number of documents deleted; if the collection
-   * didn't exist at all, the count will be -1.
-   */
-  async emptyCollection(name: string): Promise<number> {
+  async emptyCollection(name: string) {
     return this.collection(name)
       .exists()
       .then((exists) => {
@@ -123,13 +87,7 @@ export class Zarango extends Database implements StorageSystem {
       });
   }
 
-  /**
-   * Blindly deletes a collection.
-   *
-   * Returns a Promise that resolves to TRUE if the collection was deleted deleted, and
-   * FALSE if it didn't exist in the first place.
-   */
-  async destroyCollection(name: string): Promise<boolean> {
+  async destroyCollection(name: string) {
     return this.collection(name)
       .exists()
       .then((exists) => {

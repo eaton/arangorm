@@ -1,2 +1,1 @@
-export * from './base-schema.js';
-export * from './zarango.js';
+export * from '../zarango.js';
