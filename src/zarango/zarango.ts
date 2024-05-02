@@ -1,6 +1,6 @@
 import { Database } from "arangojs";
 import { DocumentSelector, ObjectWithId, SaveableDocument} from "../util/meta-types.js";
-import { getSelector } from "../util/get-selector.js";
+import { getMeta } from "../util/get-meta.js";
 import { Config } from "arangojs/connection";
 import { CollectionInsertOptions, CollectionReadOptions, CollectionRemoveOptions, CreateCollectionOptions, DocumentExistsOptions } from "arangojs/collection";
 import { merge } from "ts-deepmerge";
@@ -42,7 +42,7 @@ export class Zarango extends Database implements StorageSystem {
   async save(item: SaveableDocument, options?: CollectionInsertOptions): Promise<ObjectWithId> {
     const defaults: CollectionInsertOptions = { overwriteMode: 'update' };
     const opt: CollectionInsertOptions = merge(defaults, options ?? {});
-    const sel = getSelector(item);
+    const sel = getMeta(item);
     return this.collection(sel._collection).save({ ...item, ...sel }, opt)
   }
 
@@ -52,7 +52,7 @@ export class Zarango extends Database implements StorageSystem {
   async saveAll(item: any, options: CollectionInsertOptions = {}) {
     const defaults: CollectionInsertOptions = { overwriteMode: 'update' };
     const opt: CollectionInsertOptions = merge(defaults, options);
-    const sel = getSelector(item);
+    const sel = getMeta(item);
     return this.collection(sel._collection).save({ ...item, ...sel }, opt)
   }
   
@@ -60,7 +60,7 @@ export class Zarango extends Database implements StorageSystem {
    * A quick check to see if a given document exists.
    */
   async documentExists(input: DocumentSelector): Promise<boolean> {
-    const sel = getSelector(input);
+    const sel = getMeta(input);
     return this.collection(sel._collection).documentExists(sel._key);
   }
 
@@ -68,7 +68,7 @@ export class Zarango extends Database implements StorageSystem {
    * Get a single document.
    */
   async document(input: DocumentSelector, options: CollectionReadOptions = {}) {
-    const { _collection } = getSelector(input);
+    const { _collection } = getMeta(input);
     return this.collection(_collection).document(input, options)
   }
   
@@ -76,7 +76,7 @@ export class Zarango extends Database implements StorageSystem {
    * Delete the document with the given ID from ArangoDB.
    */
   async remove(input: DocumentSelector, options: CollectionRemoveOptions = {}): Promise<boolean> {
-    const { _collection } = getSelector(input);
+    const { _collection } = getMeta(input);
     return this.collection(_collection).remove(input, options).then(() => true);
   }
 
