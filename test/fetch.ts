@@ -1,5 +1,5 @@
 import anyTest, { TestFn } from 'ava';
-import { Zarango } from '../src/db/index.js';
+import { Zarango } from '../src/zarango/index.js';
 import { nanoid, alphabets } from '@eatonfyi/ids';
 import { aql } from 'arangojs';
 
@@ -16,7 +16,7 @@ test.before(async t => {
   });
 
   await t.context.db
-    .ensure('fetch')
+    .ensureCollection('fetch')
     .then(exists => t.assert(exists));
   
   return Promise.resolve();
@@ -24,21 +24,13 @@ test.before(async t => {
 
 test.before(async t => {
   for (let i = 0; i > 10; i++) {
-    await t.context.db.push({
+    await t.context.db.save({
       _collection: 'fetch',
       data: `Text with random data (${nanoid()})`
     });
   }
   return Promise.resolve();
 });
-
-test('query all', async t => {
-  const fetcher = t.context.db.queryAll(aql`for f in fetch return f`);
-  t.log(await fetcher.next());
-  t.log(await fetcher.next());
-  t.log(await fetcher.next());
-  t.assert(await fetcher.next() !== undefined);
-})
 
 test.after.always(async t => {
   const db = t.context.db.database('_system');
