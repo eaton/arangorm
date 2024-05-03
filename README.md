@@ -47,3 +47,14 @@ I do a lot of noodling around on small projects that grow bigger if the POC is s
 - [ ] Iterator style access for said retrieval functions. This would be useful for low-memory manipulation of large datasets, and might make streaming/piping to other formats simple to bolt on.
 - [ ] Serialization helpers to render an incoming object saveable, or reconstitute a just-retrieved object. Right now that's up to each shim's `save()` and `fetch()` methods.
 - [ ] Schema definition for collections. This would probably dovetail with the serialization stuff; right now it's assumed schema-ful storage backends are responsible for doing whatever hijinks are necessary to make things work, and it's up to the code retrieving the data to handle validation/etc.
+
+## Storage system hit list
+
+- [x] ArangoDB
+- [ ] Filesystem storage, with a directory for each collection and a JSON file for each document.
+- [ ] Just a big ol' map in memory. Inefficient and loving it.
+- [ ] SQLite, because naturally.
+- [ ] IndexedDB for in-browser use, maybe?
+- [ ] [Drizzle](https://github.com/drizzle-team/drizzle-orm)-backed Postgres and MySQL. Probably waiting until the schema stuff is sorted out.
+- [ ] [AceBase](https://www.npmjs.com/package/acebase)
+- [ ] [Milvus](https://github.com/milvus-io/milvus)
