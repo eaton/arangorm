@@ -1,13 +1,20 @@
 import {
   DocumentSelector,
-  SaveableDocument,
   ObjectWithId
 } from "./identifiers.js";
 
-export interface StorageSystem {
-  save(input: SaveableDocument, options?: Record<string, unknown>): Promise<ObjectWithId>;
+export type ObjectIdentifier = {
+  _collection: string,
+  _key: string,
+  _id: string
+}
 
-  saveAll(input: SaveableDocument[], options?: Record<string, unknown>): Promise<ObjectWithId[]>;
+export type SaveableDocument = Record<string, unknown> & Partial<ObjectIdentifier>;
+
+export interface StorageSystem {
+  save(input: SaveableDocument, options?: Record<string, unknown>): Promise<string>;
+
+  saveAll(input: SaveableDocument[], options?: Record<string, unknown>): Promise<string[]>;
 
   has(input: DocumentSelector, options?: Record<string, unknown>): Promise<boolean>;
 
