@@ -4,11 +4,15 @@ A light cluster of interfaces that can be used to expose something resembling a 
 
 The shared interface defines basic CRUD operations and collection creation/management; the intent is to add a simple shim for any storage system that I end up using on a project. Slowly, I'll accumulate a larger and larger pile of shims until I am declared king of the shitty shims and can get a paper novelty crown.
 
+## The details
+
+The assumption is that anything *persistable* should have a unique key and a collection that it lives in (roughly equivalent to a tablename and primary key, S3 storage bucket and filename, etc). Using that system, every persistable thing should be addressible by a single string ID — its container name and key name joined by a delimiter character, say.
+
+More to come later.
+
 ## Usage
 
-Load stuff, save stuff, screw around. The assumption is that anything *persistable* should have a unique key and a bucket that it lives in. It should also have a full identifier, consisting of the bucket and the key. If only a bucket is provided, the key is populated with a random identifier and the ID is created by concatenating the two. If only an ID is provided, the key and bucket are identified by splitting splitting the two parts of the ID. Good? Good. I might tweak that later to make it easier to use in single-bucket scenarios, and to avoid situations where the bucket identifier unecessarily bleeds into the persisted metadata. For the moment, though, it's good enough and it works in ArangoDB, my initial test case.
-
-While this is a somewhat silly, contrived example, it's the kind of mixing and matching that makes "don't sweat the details until later, when the demo is woring" possible.
+Load stuff, save stuff, screw around. While this is a somewhat silly, contrived example, it's the kind of mixing and matching that makes "don't sweat the details until later, when the demo is working" possible.
 
 ```typescript
 import {
