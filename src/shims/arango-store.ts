@@ -1,14 +1,19 @@
 import { merge } from "ts-deepmerge";
 
 import { Database } from "arangojs";
-import { CollectionInsertOptions, CollectionReadOptions, CollectionRemoveOptions, CreateCollectionOptions } from "arangojs/collection";
+import { CollectionInsertOptions, CollectionMetadata, CollectionReadOptions, CollectionRemoveOptions, CreateCollectionOptions } from "arangojs/collection";
 import { Config } from "arangojs/connection";
 
-import { DocumentSelector, ObjectWithId, SaveableDocument} from "./util/identifiers.js";
-import { getIdentifiers } from "./util/get-identifiers.js";
-import { StorageSystem } from "./util/storage-system.js";
+import {
+  StorageSystem,
+  WithCollections,
+  DocumentSelector,
+  DocumentIdentifier,
+  SaveableDocument,
+  getIds
+} from "../api/index.js";
 
-export class ArangoStore extends Database implements StorageSystem {
+export class ArangoStore extends Database implements StorageSystem, WithCollections {
   /**
    * Given ArangoDB connection information, returns a Zarango
    * instance representing that connection. If a nonexistent database
@@ -27,34 +32,44 @@ export class ArangoStore extends Database implements StorageSystem {
     return Promise.resolve(new ArangoStore(config));
   }
 
+  getIds = getIds;
+
   /**
    * Set a document's data, inserting or updating as necessary.
    */
-  async save(item: SaveableDocument, options?: CollectionInsertOptions): Promise<ObjectWithId> {
+  async save(item: SaveableDocument, options?: CollectionInsertOptions): Promise<DocumentIdentifier> {
     const defaults: CollectionInsertOptions = { overwriteMode: 'update' };
     const opt: CollectionInsertOptions = merge(defaults, options ?? {});
 
-    const sel = getIdentifiers(item);
-    return this.collection(sel._collection).save({ ...item, ...sel }, opt)
+    const sel = getIds(item);
+    item._id = sel._id;
+    item._key = sel._key;
+    item._collection = sel._collection;
+
+    return this.collection(sel._collection).save(item, options).then(result => sel);
   }
 
-  async saveAll(items: SaveableDocument[], options?: CollectionInsertOptions): Promise<ObjectWithId[]> {
+  async saveAll(items: SaveableDocument[], options?: CollectionInsertOptions): Promise<DocumentIdentifier[]> {
     return Promise.all(items.map(i => this.save(i, options)));
   }
   
   async has(input: DocumentSelector): Promise<boolean> {
-    const sel = getIdentifiers(input);
+    const sel = getIds(input);
     return this.collection(sel._collection).documentExists(sel._key);
   }
 
   async fetch(input: DocumentSelector, options: CollectionReadOptions = {}) {
-    const { _collection } = getIdentifiers(input);
+    const { _collection } = getIds(input);
     return this.collection(_collection).document(input, options)
   }
   
   async delete(input: DocumentSelector, options: CollectionRemoveOptions = {}) {
-    const { _collection } = getIdentifiers(input);
+    const { _collection } = getIds(input);
     return this.collection(_collection).remove(input, options).then(() => true);
+  }
+
+  async getCollections(excludeSystem?: boolean): Promise<string[]> {
+    return this.listCollections(true).then(cols => cols.map(col => col.name))
   }
 
   async ensureCollection(name: string, options: CreateCollectionOptions & { type?: string } = {} ) {
@@ -63,9 +78,9 @@ export class ArangoStore extends Database implements StorageSystem {
     return this.collection(name)
       .exists()
       .then((exists) => {
-        if (exists) return false;
-        if (type === 'edge') return this.createEdgeCollection(name, options).then(() => true);
-        return this.createCollection(name, opt).then(() => true);
+        if (exists) return this.collection(name).count().then(count => count.count);
+        if (type === 'edge') return this.createEdgeCollection(name, options).then(() => -1);
+        return this.createCollection(name, opt).then(() => -1);
       });
   }
   

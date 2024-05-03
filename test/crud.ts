@@ -1,5 +1,5 @@
 import anyTest, { TestFn } from 'ava';
-import { Zarango } from '../src/db/index.js';
+import { ArangoStore } from '../src/arango-store.js'
 import { getSelector } from "../src/util/get-selector.js";
 import { nanoid, alphabets } from '@eatonfyi/ids';
 
