@@ -1,9 +1,11 @@
+import { merge } from "ts-deepmerge";
+
 import { Database } from "arangojs";
+import { CollectionInsertOptions, CollectionReadOptions, CollectionRemoveOptions, CreateCollectionOptions } from "arangojs/collection";
+import { Config } from "arangojs/connection";
+
 import { DocumentSelector, ObjectWithId, SaveableDocument} from "./util/identifiers.js";
 import { getIdentifiers } from "./util/get-identifiers.js";
-import { Config } from "arangojs/connection";
-import { CollectionInsertOptions, CollectionReadOptions, CollectionRemoveOptions, CreateCollectionOptions, DocumentExistsOptions } from "arangojs/collection";
-import { merge } from "ts-deepmerge";
 import { StorageSystem } from "./util/storage-system.js";
 
 export class ArangoStore extends Database implements StorageSystem {
