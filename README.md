@@ -6,7 +6,9 @@ The shared interface defines basic CRUD operations and collection creation/manag
 
 ## Usage
 
-Load stuff, save stuff, screw around.
+Load stuff, save stuff, screw around. The assumption is that anything *persistable* should have a unique key and a bucket that it lives in. It should also have a full identifier, consisting of the bucket and the key. If only a bucket is provided, the key is populated with a random identifier and the ID is created by concatenating the two. If only an ID is provided, the key and bucket are identified by splitting splitting the two parts of the ID. Good? Good. I might tweak that later to make it easier to use in single-bucket scenarios, and to avoid situations where the bucket identifier unecessarily bleeds into the persisted metadata. For the moment, though, it's good enough and it works in ArangoDB, my initial test case.
+
+While this is a somewhat silly, contrived example, it's the kind of mixing and matching that makes "don't sweat the details until later, when the demo is woring" possible.
 
 ```typescript
 import {
