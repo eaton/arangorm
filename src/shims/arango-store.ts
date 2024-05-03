@@ -10,7 +10,7 @@ import {
   DocumentSelector,
   DocumentIdentifier,
   SaveableDocument,
-  getIds
+  getIdsWithCollections
 } from "../api/index.js";
 
 export class ArangoStore extends Database implements StorageSystem, WithCollections {
@@ -32,7 +32,7 @@ export class ArangoStore extends Database implements StorageSystem, WithCollecti
     return Promise.resolve(new ArangoStore(config));
   }
 
-  getIds = getIds;
+  getIds = getIdsWithCollections;
 
   /**
    * Set a document's data, inserting or updating as necessary.
@@ -41,7 +41,7 @@ export class ArangoStore extends Database implements StorageSystem, WithCollecti
     const defaults: CollectionInsertOptions = { overwriteMode: 'update' };
     const opt: CollectionInsertOptions = merge(defaults, options ?? {});
 
-    const sel = getIds(item);
+    const sel = getIdsWithCollections(item);
     item._id = sel._id;
     item._key = sel._key;
     item._collection = sel._collection;
@@ -54,17 +54,17 @@ export class ArangoStore extends Database implements StorageSystem, WithCollecti
   }
   
   async has(input: DocumentSelector): Promise<boolean> {
-    const sel = getIds(input);
+    const sel = getIdsWithCollections(input);
     return this.collection(sel._collection).documentExists(sel._key);
   }
 
   async fetch(input: DocumentSelector, options: CollectionReadOptions = {}) {
-    const { _collection } = getIds(input);
+    const { _collection } = getIdsWithCollections(input);
     return this.collection(_collection).document(input, options)
   }
   
   async delete(input: DocumentSelector, options: CollectionRemoveOptions = {}) {
-    const { _collection } = getIds(input);
+    const { _collection } = getIdsWithCollections(input);
     return this.collection(_collection).remove(input, options).then(() => true);
   }
 

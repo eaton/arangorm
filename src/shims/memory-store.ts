@@ -1,20 +1,21 @@
-import { DocumentSelector, SaveableDocument, RetrievedDocument, getIds } from "../api/get-ids.js";
+import { DocumentSelector, SaveableDocument, RetrievedDocument, getIdsWithCollections } from "../api/get-ids.js";
 import { StorageSystem } from "../api/storage-system.js";
 import { WithCollections } from "../api/with-collections.js";
+import { PropertyFilter, WithQueries, buildFilterFunction } from "../api/with-queries.js";
 
-export class MemoryStore<T extends RetrievedDocument> implements StorageSystem, WithCollections {
-  protected data: Record<string, Map<string, RetrievedDocument>> = {};
+export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T>, WithCollections, WithQueries<T> {
+  protected data: Record<string, Map<string, T>> = {};
 
-  getIds = getIds;
+  getIds = getIdsWithCollections;
 
   save(input: SaveableDocument) {
-    const ids = getIds(input);
+    const ids = getIdsWithCollections(input);
 
     input._id = ids._id;
     input._key = ids._key;
     input._collection = ids._collection;
 
-    this.data[ids._collection]?.set(ids._key, input as RetrievedDocument);
+    this.data[ids._collection]?.set(ids._key, input as T);
     return Promise.resolve(ids);
   }
 
@@ -23,17 +24,24 @@ export class MemoryStore<T extends RetrievedDocument> implements StorageSystem, 
   }
 
   has(input: DocumentSelector): Promise<boolean> {
-    const sel = getIds(input);
+    const sel = getIdsWithCollections(input);
     return Promise.resolve(this.data[sel._collection]?.has(sel._key));
   }
 
-  fetch(input: DocumentSelector, options?: Record<string, unknown>): Promise<RetrievedDocument | undefined> {
-    const ids = getIds(input);
-    return Promise.resolve(this.data[ids._collection]?.get(ids._key));
+  fetch(input: DocumentSelector, options?: Record<string, unknown>): Promise<T | undefined> {
+    const ids = getIdsWithCollections(input);
+    return Promise.resolve(this.data[ids._collection]?.get(ids._key) as T);
+  }
+
+  fetchAll(collection: string, filters?: Record<string, PropertyFilter>): Promise<T[]> {
+    return Promise.resolve(
+      [...this.data[collection]?.values() ?? []]
+        .filter(buildFilterFunction(filters))
+    );
   }
 
   delete(input: DocumentSelector, options?: Record<string, unknown>): Promise<boolean> {
-    const ids = getIds(input);
+    const ids = getIdsWithCollections(input);
     return Promise.resolve(this.data[ids._collection]?.delete(ids._key));
   }
 

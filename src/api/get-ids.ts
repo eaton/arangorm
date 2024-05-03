@@ -21,22 +21,26 @@ export type IdOnly = {
 
 export type DocumentSelector = string | IdOnly | CollectionAndKey;
 
-export interface SaveableDocument {
+export type SaveableDocument = {
+  [key: string]: unknown;
   _collection?: string,
   _key?: string,
   _id?: string
 }
 
 export interface RetrievedDocument {
+  [key: string]: unknown;
   _collection: string,
   _key: string,
   _id: string
 }
-  
+
 /**
  * Given an input string or object, return an object with an _id, _collection, and _key.
+ * This is the default ID extrapolation function; later we might consider splitting population
+ * of the object's own prperties and extraction, but let's deal with that when we get there.
  */
-export function getIds(input: DocumentSelector | SaveableDocument): DocumentIdentifier {
+export function getIdsWithCollections(input: DocumentSelector | SaveableDocument): DocumentIdentifier {
   let _key: string | undefined = undefined;
   let _collection: string | undefined = undefined;
   let _id: string | undefined = undefined;

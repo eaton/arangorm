@@ -1,6 +1,9 @@
 import { DocumentSelector, DocumentIdentifier, SaveableDocument, RetrievedDocument } from "./get-ids.js";
 
-export interface StorageSystem {
+/**
+ * Basic interface for a Key/Value retrieval system.
+ */
+export interface StorageSystem<T = RetrievedDocument> {
   getIds(input: DocumentSelector | SaveableDocument): DocumentIdentifier;
 
   save(input: SaveableDocument, options?: Record<string, unknown>): Promise<DocumentIdentifier>;
@@ -9,7 +12,7 @@ export interface StorageSystem {
 
   has(input: DocumentSelector, options?: Record<string, unknown>): Promise<boolean>;
 
-  fetch(input: DocumentSelector, options?: Record<string, unknown>): Promise<RetrievedDocument | undefined>;
+  fetch(input: DocumentSelector, options?: Record<string, unknown>): Promise<T | undefined>;
 
   delete(input: DocumentSelector, options?: Record<string, unknown>): Promise<boolean>;
 }

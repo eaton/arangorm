@@ -1,16 +1,15 @@
 import anyTest, { TestFn } from 'ava';
-import { Zarango } from '../src/zarango/index.js';
 import { nanoid, alphabets } from '@eatonfyi/ids';
-import { aql } from 'arangojs';
+import { ArangoStore } from '../src/shims/arango-store.js';
 
 const test = anyTest as TestFn<{
   databaseName: string,
-  db: Zarango,
+  db: ArangoStore,
 }>;
 
 test.before(async t => {
   t.context.databaseName = 'fetch-' + nanoid(6, alphabets.Lower);
-  t.context.db = await Zarango.getConnection({
+  t.context.db = await ArangoStore.getConnection({
     databaseName: t.context.databaseName,
     auth: { username: 'root' }
   });
