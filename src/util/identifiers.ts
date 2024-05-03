@@ -11,6 +11,7 @@ export type ObjectWithCollection = SetRequired<ObjectMetadata, '_collection'> ;
 export type ObjectWithCollectionAndKey = SetRequired<ObjectMetadata, '_collection' | '_key'> ;
 
 export type SaveableDocument = Record<string, unknown> & (ObjectWithId | ObjectWithCollection);
+export type PopulatedDocument = Record<string, unknown> & Required<ObjectMetadata>;
 
 /**
  * A 'selector' is any combination of properties, or a single string, that

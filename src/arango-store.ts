@@ -33,15 +33,13 @@ export class ArangoStore extends Database implements StorageSystem {
   async save(item: SaveableDocument, options?: CollectionInsertOptions): Promise<ObjectWithId> {
     const defaults: CollectionInsertOptions = { overwriteMode: 'update' };
     const opt: CollectionInsertOptions = merge(defaults, options ?? {});
+
     const sel = getIdentifiers(item);
     return this.collection(sel._collection).save({ ...item, ...sel }, opt)
   }
 
-  async saveAll(item: any, options: CollectionInsertOptions = {}) {
-    const defaults: CollectionInsertOptions = { overwriteMode: 'update' };
-    const opt: CollectionInsertOptions = merge(defaults, options);
-    const sel = getIdentifiers(item);
-    return this.collection(sel._collection).save({ ...item, ...sel }, opt)
+  async saveAll(items: SaveableDocument[], options?: CollectionInsertOptions): Promise<ObjectWithId[]> {
+    return Promise.all(items.map(i => this.save(i, options)));
   }
   
   async has(input: DocumentSelector): Promise<boolean> {

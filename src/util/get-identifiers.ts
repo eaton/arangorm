@@ -8,8 +8,6 @@ export function getIdentifiers(input: SaveableDocument | DocumentSelector) {
   let _collection: string | undefined = undefined;
   let _id: string | undefined = undefined;
 
-  const output: Record<string, string> = {};
-
   if (typeof input === 'string') {
     // If a string has been given, split out its collection and key components.
     [_collection, _key] = input.split('/');
@@ -20,11 +18,12 @@ export function getIdentifiers(input: SaveableDocument | DocumentSelector) {
     [_collection, _key] = [input._collection, input._key];
   }
 
-  // Throw an error if _key and _collection aren't both present
+  // Throw an error if _collection isn't defined
   if (_collection === undefined) throw new Error('Invalid object _collection');
   
+  const output: Record<string, unknown> & { _collection: string } = { _collection };
+
   if (_key) output._key = _key;
-  if (_collection) output._collection = _collection;
   if (_id) {
     output._id = _id;
   } else if (_collection && _key) {
