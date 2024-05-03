@@ -1,25 +1,43 @@
-# Eaton IDs
+# Minimum Viable Datastore
 
-Not really an ORM, just a convenience wrapper around ArangoDB that eliminates the boilerplate from common tasks. These shouldn't be treated as an abstraction layer; understanding the actual AQL and ArangoDB concepts happening under the hood is still important. Note that this library is being built against ArangoJS 9.
+A light cluster of interfaces that can be used to expose something resembling a document/kv store on top of wildly divergent backends or no backend at all.
 
-## Database wrapper
+The shared interface defines basic CRUD operations and collection creation/management; the intent is to add a simple shim for any storage system that I end up using on a project. Slowly, I'll accumulate a larger and larger pile of shims until I am declared king of the shitty shims and can get a paper novelty crown.
 
-`getConnection` takes a standard connection object and returns a Database instance; behind the scenes it maintains a distinct db object for each connection, and can (optionally) handle the creation of a new atabase instance if the account in use has create permissions.
+## Usage
 
-A custom Database wrapper class also handles stuff like has/get/check/clear for any document with an `_id`, or any document with a `_key` when a collection name is supplied.
+Load stuff, save stuff, screw around.
 
-## Schema builder
+```typescript
+import {
+  StorageSystem,
+  ArangoStore,
+  MemoryStore
+} from '@eatonfyi/store';
 
-Use zod to define schemas, then use them for validation when reading in documents. Optionally generate a JSONSchema that Arango can use to enforce schema validity, as well.
+const adb = new ArangoStore({ // connection details });
+const mdb = new MemoryStore({ // config details });
 
-## Query builder
+await move('myCollection/1234', adb, mdb);
 
-In progress. The `aqBuilder` project was a first pass at this, but had a lot of kludgy weirdness and verbosity when working with complex queries.
+async function move(id: string, source: StorageSystem, dest: StorageSystem) {
+  if (await source.has(id)) {
+    return source.fetch(id)
+      .then(document => dest.save(document))
+      .then(() => true)
+  } else {
+    return Promise.resolve(false);
+  }
+}
+```
 
-## Batch processor
+## But why?
 
-Pass in a query and get back an iterator that spits out results one by one. It handles cursors and windows under the hood to avoid thrashing Arango unecessarily. Optionally pass in a task function, and make modifications or optionally re-insert the changed data.
+I do a lot of noodling around on small projects that grow bigger if the POC is successful. Using this set of interfaces for basic CRUD, lets me achieve maximum interoperability between my own assorted tools without the yak shaving. When I need to stretch beyond simple CRUD, I can use the native query/manipulation tools for a particular storage backend. When things get serious enough that I need to actually optimize, the shims are meant to be lightweight enough that tearing them out and using "real" storage mechanisms isn't too punishing.
 
-## Reporting tool
+## Potential TODOs
 
-Run a query, get back the results as an Array, Object, or DataFrame. Spit those out in a variety of formats, including MS Excel.
+- [ ] Query-light system for retrieving all records from a single collection that match a particular criteria. Obviously this way lies madness.
+- [ ] Iterator style access for said retrieval functions. This would be useful for low-memory manipulation of large datasets, and might make streaming/piping to other formats simple to bolt on.
+- [ ] Serialization helpers to render an incoming object saveable, or reconstitute a just-retrieved object. Right now that's up to each shim's `save()` and `fetch()` methods.
+- [ ] Schema definition for collections. This would probably dovetail with the serialization stuff; right now it's assumed schema-ful storage backends are responsible for doing whatever hijinks are necessary to make things work, and it's up to the code retrieving the data to handle validation/etc.

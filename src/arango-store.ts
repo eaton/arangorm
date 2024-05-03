@@ -6,7 +6,7 @@ import { CollectionInsertOptions, CollectionReadOptions, CollectionRemoveOptions
 import { merge } from "ts-deepmerge";
 import { StorageSystem } from "./util/storage-system.js";
 
-export class Zarango extends Database implements StorageSystem {
+export class ArangoStore extends Database implements StorageSystem {
   /**
    * Given ArangoDB connection information, returns a Zarango
    * instance representing that connection. If a nonexistent database
@@ -22,7 +22,7 @@ export class Zarango extends Database implements StorageSystem {
         await db.createDatabase(databaseName);
       }
     } 
-    return Promise.resolve(new Zarango(config));
+    return Promise.resolve(new ArangoStore(config));
   }
 
   /**
