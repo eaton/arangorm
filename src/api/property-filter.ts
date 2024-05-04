@@ -1,13 +1,13 @@
-import { RetrievedDocument } from "../api/get-ids.js";
 import { get, keysOf } from "@salesforce/ts-types";
 import micromatch from "micromatch";
+import equal from '@gilbarbara/deep-equal';
 import is from '@sindresorhus/is';
 
 export type PropertyFilter = {
   is?: 'object' | 'array' | 'string' | 'number' | 'null' | 'empty',
   isNot?: 'object' | 'array' | 'string' | 'number' | 'null' | 'empty',
-	eq?: string | number,
-	notEq?: string | number,
+	eq?: Object | unknown[] | string | number | null,
+	notEq?: Object | unknown[] | string | number | null,
   empty?: boolean,
 	gt?: string | number,
 	lt?: string | number,
@@ -18,19 +18,8 @@ export type PropertyFilter = {
 	like?: string,
 }
 
-/**
- * Currently a very ugly placeholder.
- * 
- * These functions should produce iterable iterators rather than Promised arrays; that
- * would allow consumer code to `[...await whatever]` if they truly need everything, but
- * sip from the firehose with `for await (x of whatever)` in other situations.
- */
-export interface WithQueries<T = RetrievedDocument> {
-  fetchAll(collection: string, filters?: Record<string, PropertyFilter>): Promise<T[]>
-}
-
 export function buildFilterFunction(filters?: Record<string, PropertyFilter>) {
-  return (item: RetrievedDocument): boolean => {
+  return (item: unknown): boolean => {
     if (!filters) return true;
     for (const prop of keysOf(filters)) {
       for (const operator of keysOf(filters[prop])) {
@@ -39,13 +28,15 @@ export function buildFilterFunction(filters?: Record<string, PropertyFilter>) {
 
         if (operator === 'is') {
           if (is(value).toLocaleLowerCase() !== target?.toString().toLocaleLowerCase()) return false;
+          
         } else if (operator === 'isNot') {
           if (is(value).toLocaleLowerCase() === target?.toString().toLocaleLowerCase()) return false;
+
         } else if (operator === 'eq') {
-          if (value !== target) return false;
+          if (!equal(value, target)) return false;
 
         } else if (operator === 'notEq') {
-          if (value === target) return false;
+          if (equal(value, target)) return false;
 
         } else if (operator === 'empty') {
           if (isEmpty(value) !== target) return false;

@@ -3,7 +3,8 @@ import { DocumentSelector, DocumentIdentifier, SaveableDocument, RetrievedDocume
 /**
  * Basic interface for a Key/Value retrieval system.
  */
-export interface StorageSystem<T = RetrievedDocument> {
+export interface StorageSystem<T extends RetrievedDocument = RetrievedDocument> {
+  
   getIds(input: DocumentSelector | SaveableDocument): DocumentIdentifier;
 
   save(input: SaveableDocument, options?: Record<string, unknown>): Promise<DocumentIdentifier>;

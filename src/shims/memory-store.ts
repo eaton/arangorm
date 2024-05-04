@@ -1,9 +1,15 @@
-import { DocumentSelector, SaveableDocument, RetrievedDocument, getIdsWithCollections } from "../api/get-ids.js";
-import { StorageSystem } from "../api/storage-system.js";
-import { WithCollections } from "../api/with-collections.js";
-import { PropertyFilter, WithQueries, buildFilterFunction } from "../api/with-queries.js";
+import {
+  buildFilterFunction,
+  PropertyFilter,
+  DocumentSelector,
+  SaveableDocument,
+  RetrievedDocument,
+  getIdsWithCollections,
+  StorageSystem,
+  WithCollections
+} from "../api/index.js";
 
-export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T>, WithCollections, WithQueries<T> {
+export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T>, WithCollections<T> {
   protected data: Record<string, Map<string, T>> = {};
 
   getIds = getIdsWithCollections;
@@ -31,13 +37,6 @@ export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T
   fetch(input: DocumentSelector, options?: Record<string, unknown>): Promise<T | undefined> {
     const ids = getIdsWithCollections(input);
     return Promise.resolve(this.data[ids._collection]?.get(ids._key) as T);
-  }
-
-  fetchAll(collection: string, filters?: Record<string, PropertyFilter>): Promise<T[]> {
-    return Promise.resolve(
-      [...this.data[collection]?.values() ?? []]
-        .filter(buildFilterFunction(filters))
-    );
   }
 
   delete(input: DocumentSelector, options?: Record<string, unknown>): Promise<boolean> {
@@ -68,5 +67,12 @@ export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T
     const exists = !!this.data[name];
     delete this.data[name];
     return Promise.resolve(exists);
+  }
+
+  fetchAll(collection: string, filters: Record<string, PropertyFilter>): Promise<T[]> {
+    return Promise.resolve(
+      [...this.data[collection]?.values() ?? []]
+        .filter(buildFilterFunction(filters))
+    );
   }
 }

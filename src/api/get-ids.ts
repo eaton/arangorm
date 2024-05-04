@@ -62,3 +62,7 @@ export function getIdsWithCollections(input: DocumentSelector | SaveableDocument
 
   return { _key, _collection, _id };
 };
+
+export function getIdsWithoutCollection(input: DocumentSelector | SaveableDocument): DocumentIdentifier {
+  throw new Error('Not yet implemented');
+}

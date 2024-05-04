@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@eatonfyi/ids": "github:eaton/ids",
+    "@gilbarbara/deep-equal": "^0.3.1",
     "@salesforce/ts-types": "^2.0.9",
     "@sindresorhus/is": "^6.3.0",
     "@types/micromatch": "^4.0.7",
