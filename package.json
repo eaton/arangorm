@@ -24,6 +24,8 @@
     "build": "pkgroll",
     "clean": "shx rm -rf dist",
     "prepare": "npm run clean && npm run build",
+    "start": "docker-compose up -d",
+    "stop": "docker-compose stop",
     "test": "ava"
   },
   "ava": {
@@ -59,6 +61,7 @@
     "@salesforce/ts-types": "^2.0.9",
     "@sindresorhus/is": "^6.3.0",
     "@types/micromatch": "^4.0.7",
+    "aql-builder": "^0.6.3",
     "arangojs": "^9.0.0-preview.1",
     "micromatch": "^4.0.5",
     "ts-deepmerge": "^7.0.0",

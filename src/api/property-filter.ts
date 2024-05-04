@@ -18,57 +18,62 @@ export type PropertyFilter = {
 	like?: string,
 }
 
-export function buildFilterFunction(filters?: Record<string, PropertyFilter>) {
-  return (item: unknown): boolean => {
-    if (!filters) return true;
-    for (const prop of keysOf(filters)) {
-      for (const operator of keysOf(filters[prop])) {
-        const value = get(item, prop);
-        const target = filters[prop][operator];
+export function inefficientFilterFunction(item: unknown, filters: Record<string, PropertyFilter>): boolean {
+  for (const prop of keysOf(filters)) {
+    for (const operator of keysOf(filters[prop])) {
+      const value = get(item, prop);
+      const target = filters[prop][operator];
 
-        if (operator === 'is') {
-          if (is(value).toLocaleLowerCase() !== target?.toString().toLocaleLowerCase()) return false;
-          
-        } else if (operator === 'isNot') {
-          if (is(value).toLocaleLowerCase() === target?.toString().toLocaleLowerCase()) return false;
+      if (operator === 'is') {
+        if (is(value).toLocaleLowerCase() !== target?.toString().toLocaleLowerCase()) return false;
+        
+      } else if (operator === 'isNot') {
+        if (is(value).toLocaleLowerCase() === target?.toString().toLocaleLowerCase()) return false;
 
-        } else if (operator === 'eq') {
-          if (!equal(value, target)) return false;
+      } else if (operator === 'eq') {
+        if (!equal(value, target)) return false;
 
-        } else if (operator === 'notEq') {
-          if (equal(value, target)) return false;
+      } else if (operator === 'notEq') {
+        if (equal(value, target)) return false;
 
-        } else if (operator === 'empty') {
-          if (isEmpty(value) !== target) return false;
+      } else if (operator === 'empty') {
+        if (isEmpty(value) !== target) return false;
 
-        } else {
-          if (operator === 'gt') {
-            if (typeof value !== typeof target) return false;
-
-          } else if (operator === 'lt') {
-            if (typeof value !== typeof target) return false;
-
-          } else if (operator === 'in') {
-            if (!is.array(target) || !target.includes(value)) return false;
-
-          } else if (operator === 'notIn') {
-            if (!is.array(target) || target.includes(value)) return false;
-
-          } else if (operator === 'has') {
-            if (!is.array(value) || !value.includes(target)) return false;
-
-          } else if (operator === 'notHas') {
-            if (!is.array(value) || value.includes(target)) return false;
-
-          } else if (operator === 'like') {
-            if (!toStringable(value) || !toStringable(target)) return false;
-            if (!micromatch.isMatch(value.toString(), target.toString())) return false;
+      } else {
+        if (operator === 'gt') {
+          if (is.string(value) && is.string(target)) {
+            if (!value.localeCompare(target)) return false;
+          } else if (is.number(value) && is.number(target)) {
+            if (value <= target) return false;
           }
+
+        } else if (operator === 'lt') {
+          if (is.string(value) && is.string(target)) {
+            if (!target.localeCompare(value)) return false;
+          } else if (is.number(value) && is.number(target)) {
+            if (value >= target) return false;
+          }
+
+        } else if (operator === 'in') {
+          if (!is.array(target) || !target.includes(value)) return false;
+
+        } else if (operator === 'notIn') {
+          if (!is.array(target) || target.includes(value)) return false;
+
+        } else if (operator === 'has') {
+          if (!is.array(value) || !value.includes(target)) return false;
+
+        } else if (operator === 'notHas') {
+          if (!is.array(value) || value.includes(target)) return false;
+
+        } else if (operator === 'like') {
+          if (!toStringable(value) || !toStringable(target)) return false;
+          if (!micromatch.isMatch(value?.toString() ?? '', target?.toString() ?? '')) return false;
         }
       }
     }
-    return true;
   }
+  return true;
 }
 
 function isEmpty(input: unknown) {

@@ -1,19 +1,25 @@
-import { merge } from "ts-deepmerge";
-
-import { Database } from "arangojs";
-import { CollectionInsertOptions, CollectionMetadata, CollectionReadOptions, CollectionRemoveOptions, CreateCollectionOptions } from "arangojs/collection";
+import { aql, Database } from "arangojs";
 import { Config } from "arangojs/connection";
+import {
+  CollectionInsertOptions,
+  CollectionReadOptions,
+  CollectionRemoveOptions,
+  CreateCollectionOptions
+} from "arangojs/collection";
+import { merge } from "ts-deepmerge";
 
 import {
   StorageSystem,
-  WithCollections,
   DocumentSelector,
   DocumentIdentifier,
   SaveableDocument,
-  getIdsWithCollections
+  getIdsWithCollections,
+  inefficientFilterFunction,
+  PropertyFilter,
+  RetrievedDocument
 } from "../api/index.js";
 
-export class ArangoStore extends Database implements StorageSystem, WithCollections {
+export class ArangoStore<T extends RetrievedDocument = RetrievedDocument> extends Database implements StorageSystem<T> {
   /**
    * Given ArangoDB connection information, returns a Zarango
    * instance representing that connection. If a nonexistent database
@@ -46,7 +52,9 @@ export class ArangoStore extends Database implements StorageSystem, WithCollecti
     item._key = sel._key;
     item._collection = sel._collection;
 
-    return this.collection(sel._collection).save(item, options).then(result => sel);
+    return this.collection(sel._collection)
+      .save(item, options)
+      .then(result => sel);
   }
 
   async saveAll(items: SaveableDocument[], options?: CollectionInsertOptions): Promise<DocumentIdentifier[]> {
@@ -58,11 +66,18 @@ export class ArangoStore extends Database implements StorageSystem, WithCollecti
     return this.collection(sel._collection).documentExists(sel._key);
   }
 
-  async fetch(input: DocumentSelector, options: CollectionReadOptions = {}) {
+  async fetch(input: DocumentSelector, options: CollectionReadOptions = {}): Promise<T> {
     const { _collection } = getIdsWithCollections(input);
     return this.collection(_collection).document(input, options)
   }
   
+  // Sweet mother of god this is terrible.
+  async fetchAll(collection: string, filters: Record<string, PropertyFilter> = {}): Promise<T[]> {
+    return this.query<T>(aql`for document in ${this.collection(collection)} return document`)
+      .then(cursor => cursor.all())
+      .then(documents => documents.filter(i => inefficientFilterFunction(i, filters)))
+  }
+
   async delete(input: DocumentSelector, options: CollectionRemoveOptions = {}) {
     const { _collection } = getIdsWithCollections(input);
     return this.collection(_collection).remove(input, options).then(() => true);

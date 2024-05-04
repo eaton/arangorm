@@ -1,15 +1,14 @@
 import {
-  buildFilterFunction,
+  inefficientFilterFunction,
   PropertyFilter,
   DocumentSelector,
   SaveableDocument,
   RetrievedDocument,
   getIdsWithCollections,
   StorageSystem,
-  WithCollections
 } from "../api/index.js";
 
-export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T>, WithCollections<T> {
+export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T> {
   protected data: Record<string, Map<string, T>> = {};
 
   getIds = getIdsWithCollections;
@@ -34,19 +33,23 @@ export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T
     return Promise.resolve(this.data[sel._collection]?.has(sel._key));
   }
 
-  fetch(input: DocumentSelector, options?: Record<string, unknown>): Promise<T | undefined> {
+  fetch(input: DocumentSelector): Promise<T | undefined> {
     const ids = getIdsWithCollections(input);
     return Promise.resolve(this.data[ids._collection]?.get(ids._key) as T);
   }
 
-  delete(input: DocumentSelector, options?: Record<string, unknown>): Promise<boolean> {
+  fetchAll(collection: string, filters: Record<string, PropertyFilter> = {}): Promise<T[]> {
+    return Promise.resolve(
+      [...this.data[collection]?.values() ?? []]
+        .filter(i => inefficientFilterFunction(i, filters))
+    );
+  }
+
+  delete(input: DocumentSelector): Promise<boolean> {
     const ids = getIdsWithCollections(input);
     return Promise.resolve(this.data[ids._collection]?.delete(ids._key));
   }
 
-  /**
-   * WithCollections implementation
-   */
   getCollections(): Promise<string[]> {
     return Promise.resolve(Object.keys(this.data));
   }
@@ -67,12 +70,5 @@ export class MemoryStore<T extends RetrievedDocument> implements StorageSystem<T
     const exists = !!this.data[name];
     delete this.data[name];
     return Promise.resolve(exists);
-  }
-
-  fetchAll(collection: string, filters: Record<string, PropertyFilter>): Promise<T[]> {
-    return Promise.resolve(
-      [...this.data[collection]?.values() ?? []]
-        .filter(buildFilterFunction(filters))
-    );
   }
 }
