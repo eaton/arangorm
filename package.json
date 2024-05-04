@@ -56,6 +56,7 @@
     "typescript": "^5.4.3"
   },
   "dependencies": {
+    "@eatonfyi/fs-jetpack": "github:eaton/fs-jetpack",
     "@eatonfyi/ids": "github:eaton/ids",
     "@gilbarbara/deep-equal": "^0.3.1",
     "@salesforce/ts-types": "^2.0.9",
