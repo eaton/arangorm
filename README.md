@@ -1,60 +1,16 @@
 # Minimum Viable Datastore
 
-A light cluster of interfaces that can be used to expose something resembling a document/kv store on top of wildly divergent backends or no backend at all.
+A light cluster of interfaces that can be used to expose something resembling a document/kv store on top of wildly divergent backends or no backend at all. For the moment at least, work has stopped in favor of just using the [keyv](https://github.com/jaredwray/keyv) project.
 
-The shared interface defines basic CRUD operations and collection creation/management; the intent is to add a simple shim for any storage system that I end up using on a project. Slowly, I'll accumulate a larger and larger pile of shims until I am declared king of the shitty shims and can get a paper novelty crown.
+## How It Works
 
-## The details
+At its heart, this is just a wrapper for key-indexed document stores. There are some variations between storage systems that use a single bucket and ones that support named sub-buckets; storage providers can also (optionally) support lightweight querying of items in a given bucket. But that's optional.
 
-The assumption is that anything *persistable* should have a unique key and a collection that it lives in (roughly equivalent to a tablename and primary key, S3 storage bucket and filename, etc). Using that system, every persistable thing should be addressible by a single string ID — its container name and key name joined by a delimiter character, say.
+Every object stored in the system has to follow a couple of basic rules:
 
-More to come later.
+1. Must be serializable to JSON.
+2. May have a collection/bucket/value-type stored in its `_collection` property.
+3. May have a bucket-relative identifier stored in its `_key` property.
+4. Must have an `_id` property that consists of a `_collection` and a `_key`, separated by a slash.
 
-## Usage
-
-Load stuff, save stuff, screw around. While this is a somewhat silly, contrived example, it's the kind of mixing and matching that makes "don't sweat the details until later, when the demo is working" possible.
-
-```typescript
-import {
-  StorageSystem,
-  ArangoStore,
-  MemoryStore
-} from '@eatonfyi/store';
-
-const adb = new ArangoStore({ // connection details });
-const mdb = new MemoryStore({ // config details });
-
-await move('myCollection/1234', adb, mdb);
-
-async function move(id: string, source: StorageSystem, dest: StorageSystem) {
-  if (await source.has(id)) {
-    return source.fetch(id)
-      .then(document => dest.save(document))
-      .then(() => true)
-  } else {
-    return Promise.resolve(false);
-  }
-}
-```
-
-## But why?
-
-I do a lot of noodling around on small projects that grow bigger if the POC is successful. Using this set of interfaces for basic CRUD, lets me achieve maximum interoperability between my own assorted tools without the yak shaving. When I need to stretch beyond simple CRUD, I can use the native query/manipulation tools for a particular storage backend. When things get serious enough that I need to actually optimize, the shims are meant to be lightweight enough that tearing them out and using "real" storage mechanisms isn't too punishing.
-
-## Potential TODOs
-
-- [ ] Query-light system for retrieving all records from a single collection that match a particular criteria. Obviously this way lies madness.
-- [ ] Iterator style access for said retrieval functions. This would be useful for low-memory manipulation of large datasets, and might make streaming/piping to other formats simple to bolt on.
-- [ ] Serialization helpers to render an incoming object saveable, or reconstitute a just-retrieved object. Right now that's up to each shim's `save()` and `fetch()` methods.
-- [ ] Schema definition for collections. This would probably dovetail with the serialization stuff; right now it's assumed schema-ful storage backends are responsible for doing whatever hijinks are necessary to make things work, and it's up to the code retrieving the data to handle validation/etc.
-
-## Storage system hit list
-
-- [x] ArangoDB
-- [ ] Filesystem storage, with a directory for each collection and a JSON file for each document.
-- [ ] Just a big ol' map in memory. Inefficient and loving it.
-- [ ] SQLite, because naturally.
-- [ ] IndexedDB for in-browser use, maybe?
-- [ ] [Drizzle](https://github.com/drizzle-team/drizzle-orm)-backed Postgres and MySQL. Probably waiting until the schema stuff is sorted out.
-- [ ] [AceBase](https://www.npmjs.com/package/acebase)
-- [ ] [Milvus](https://github.com/milvus-io/milvus)
+When storing an item for the first time, if a `_collection` is given but no `_key` or `_id` is given, the Storage System should populate the `_key` value with a random or hash-based identifier. If only the `_id` property is supplied, it should be expanded and both `_key` and `_collection` should be populated based on its split value.
